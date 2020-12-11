@@ -6,10 +6,14 @@ from gym_duckietown.envs import DuckietownEnv
 import numpy as np
 import cv2
 
+
 #nuevos import
 import math
 #from cv_bridge import CvBridge, CvBridgeError
 
+
+
+    
 def mov_duckiebot(key):
     # La acción de Duckiebot consiste en dos valores:
     # velocidad lineal y velocidad de giro
@@ -56,9 +60,6 @@ minimum_ratio_yellow = 1.5
 minimum_ratio_white = 3.0    # 1.71
 
 
-
-
-
 def morfologies(mask):
     kernel = np.ones((kernel_dimensions, kernel_dimensions), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=erode_iterations)
@@ -68,22 +69,20 @@ def morfologies(mask):
 def center(rect):
     x = rect[0][0]
     y = rect[0][1]
-    center = cv2.circle(rect, (x, y), 3, (0, 255, 0), -1) #esta parte era point.
-    center.x = x
-    center.y = y
+    center = {'coordx':None,'coordy': None}
+    center['coordx'] = x
+    center['coordy'] = y
     return center
-          
+
 def ratio(rect):
-    x = rect[0][0]
-    y = rect[0][1] # puede generar problemas
-    ratios = cv2.circle(rect, (x, y), 3, (0, 255, 0), -1)
+    ratios = {'coordx':None,'coordy': None}
     w = float(rect[1][0])
     h = float(rect[1][1])
-    ratios.x = h/w
-    ratios.y = w/h
+    ratios['coordx'] = h/w
+    ratios['coordy'] = w/h
     return ratios
-
-#esta funcion esta dentro del while 
+'''
+#esta funcion esta dentro del while , sobra
 def _process_image(image):
     # Se deja en frame la imagen actual
     frame = image 
@@ -165,7 +164,7 @@ def _process_image(image):
                 # Extraccion de datos blancos
                 data['white'] += 1
                 data['white_data'].append(rect_white)
-
+'''
 
 #como en det_pato
 if __name__ == '__main__':

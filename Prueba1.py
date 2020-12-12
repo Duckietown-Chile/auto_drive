@@ -81,6 +81,7 @@ def ratio(rect):
     ratios['coordx'] = h/w
     ratios['coordy'] = w/h
     return ratios
+
 '''
 #esta funcion esta dentro del while , sobra
 def _process_image(image):
@@ -221,7 +222,7 @@ if __name__ == '__main__':
         # Se deja en frame la imagen actual
         frame = obs 
         # Creamos los espacios de color
-        gray_space = cv2.COLOR_RGB2GRAY
+        gray_space = cv2.COLOR_BGR2GRAY
         color_space = cv2.COLOR_RGB2HSV
 
         # Encontramos las mascaras de colores blanco y amarillo
@@ -236,6 +237,15 @@ if __name__ == '__main__':
         # Filtramos la imagen con esos colores
         frame_yellow = cv2.bitwise_and(frame, frame, mask=mask_yellow)
         frame_white = cv2.bitwise_and(frame, frame, mask=mask_white)
+
+
+
+
+        #parte nuevaaaaaa, para cambiar de RGB  a  BGR
+        frame_yellow = cv2.cvtColor(frame_yellow, cv2.COLOR_RGB2BGR)
+        frame_white = cv2.cvtColor(frame_white, cv2.COLOR_RGB2BGR)
+
+
 
         # Cambio a espacio de color en blanco y negro
         frame_yellow = cv2.cvtColor(frame_yellow, gray_space)
@@ -260,13 +270,13 @@ if __name__ == '__main__':
 
                 # Dibujar puntos centro
                 if show_centers_yellow:
-                    center_yellow_coordinates = (int(center_yellow.x), int(center_yellow.y))
+                    center_yellow_coordinates = (int(center_yellow['coordx']), int(center_yellow['coordy']))
                     frame = cv2.circle(frame, center_yellow_coordinates, centers_radius, yellow_centers_color, centers_thickness)
 
                 # Condiciones para ser calzada amarilla
                 ratio_yellow = ratio(rect_yellow)
-                condition_yellow = center_yellow.y >= minimum_deepness and (ratio_yellow.x >= minimum_ratio_yellow or ratio_yellow.y >= minimum_ratio_yellow)
-
+                condition_yellow = center_yellow['coordy'] >= minimum_deepness and (ratio_yellow['coordx'] >= minimum_ratio_yellow or ratio_yellow['coordy'] >= minimum_ratio_yellow)
+#todos los .x tienen que ser ['coordy']
                 if condition_yellow:
                     # Dibujo de rectangulos en la imagen
                     box__yellow = np.int0(cv2.boxPoints(rect_yellow))
@@ -285,12 +295,12 @@ if __name__ == '__main__':
 
                 # Dibujar puntos centro
                 if show_centers_white:
-                    center_white_coordinates = (int(center_white.x), int(center_white.y))
+                    center_white_coordinates = (int(center_white['coordx']), int(center_white['coordy']))
                     frame = cv2.circle(frame, center_white_coordinates, centers_radius, white_centers_color, centers_thickness)
 
                 # Condiciones para ser calzada blanca
                 ratio_white = ratio(rect_white)
-                condition_white = center_white.y >= minimum_deepness and (ratio_white.x >= minimum_ratio_white or ratio_white.y >= minimum_ratio_white)
+                condition_white = center_white['coordy'] >= minimum_deepness and (ratio_white['coordx'] >= minimum_ratio_white or ratio_white['coordy'] >= minimum_ratio_white)
 
                 if condition_white:
                     # Dibujo de rectangulos en la imagen
@@ -305,7 +315,7 @@ if __name__ == '__main__':
         #Ventana con imagen normal del duckiebot           
         cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
-        cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_HSV2BGR))
+        cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
 
 # Se cierra el environment y termina el programa

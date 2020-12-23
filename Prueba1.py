@@ -32,12 +32,12 @@ def mov_duckiebot(key):
 # Define range of color in HSV
 lower_white = np.array([0, 0, 155])
 upper_white = np.array([255, 55, 255])
-lower_yellow = np.array([20, 110, 170])
-upper_yellow = np.array([40, 255, 255])
+lower_yellow = np.array([20, 80, 150])
+upper_yellow = np.array([45, 255, 255])
 
 # Morfologias
 kernel_dimensions = 4    # 5
-erode_iterations = 1    # 1
+erode_iterations = 3    # 1
 dilate_iterations = 1    # 1
 
 # Dibujo
@@ -82,90 +82,6 @@ def ratio(rect):
     ratios['coordy'] = w/h
     return ratios
 
-'''
-#esta funcion esta dentro del while , sobra
-def _process_image(image):
-    # Se deja en frame la imagen actual
-    frame = image 
-    # Creamos los espacios de color
-    gray_space = cv2.COLOR_BGR2GRAY
-    color_space = cv2.COLOR_BGR2HSV
-
-    # Encontramos las mascaras de colores blanco y amarillo
-    frame_hsv = cv2.cvtColor(frame, color_space)   #aca color_space -> cv2.COLOR_RGB2HSV
-    mask_yellow = cv2.inRange(frame_hsv, lower_yellow, upper_yellow)
-    mask_white = cv2.inRange(frame_hsv, lower_white, upper_white)
-    
-    # Realizamos las operaciones morfologicas para borrar manchas pequenas
-    mask_yellow = morfologies(mask_yellow) 
-    mask_white = morfologies(mask_white)
-    
-    # Filtramos la imagen con esos colores
-    frame_yellow = cv2.bitwise_and(frame, frame, mask=mask_yellow)
-    frame_white = cv2.bitwise_and(frame, frame, mask=mask_white)
-
-    # Cambio a espacio de color en blanco y negro
-    frame_yellow = cv2.cvtColor(frame_yellow, gray_space)
-    frame_white = cv2.cvtColor(frame_white, gray_space)
-
-    # Deteccion de contornos
-    image__yellow, contours_yellow, hierarchy_yellow = cv2.findContours(frame_yellow, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    image_white, contours_white, hierarchy_white = cv2.findContours(frame_white, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Creamos el diccionario con los datos
-    data = {'yellow': 0, 'white': 0, 'yellow_data': [], 'white_data': []}
-    
-    
-    # Manejo de datos amarillos
-    for cnt_yellow in contours_yellow:
-
-            # Encontrar rectangulos rotados y sus puntos centro
-            rect_yellow = cv2.minAreaRect(cnt_yellow)   
-            center_yellow = center(rect_yellow)
-
-            # Dibujar puntos centro
-            if show_centers_yellow:
-                center_yellow_coordinates = (int(center_yellow.x), int(center_yellow.y))
-                frame = cv2.circle(frame, center_yellow_coordinates, centers_radius, yellow_centers_color, centers_thickness)
-
-            # Condiciones para ser calzada amarilla
-            ratio_yellow = ratio(rect_yellow)
-            condition_yellow = center_yellow.y >= minimum_deepness and (ratio_yellow.x >= minimum_ratio_yellow or ratio_yellow.y >= minimum_ratio_yellow)
-
-            if condition_yellow:
-                # Dibujo de rectangulos en la imagen
-                box__yellow = np.int0(cv2.boxPoints(rect_yellow))
-                frame = cv2.drawContours(frame, [box__yellow], 0, yellow_figure_color, yellow_figure_thickness)
-
-                # Extraccion de datos amarillos
-                data['yellow'] += 1
-                data['yellow_data'].append(rect_yellow)
-
-    # Manejo de datos blancos
-    for cnt_white in contours_white:
-
-            # Encontrar rectangulos rotados y sus puntos centro
-            rect_white = cv2.minAreaRect(cnt_white)
-            center_white = center(rect_white)
-
-            # Dibujar puntos centro
-            if show_centers_white:
-                center_white_coordinates = (int(center_white.x), int(center_white.y))
-                frame = cv2.circle(frame, center_white_coordinates, centers_radius, white_centers_color, centers_thickness)
-
-            # Condiciones para ser calzada blanca
-            ratio_white = ratio(rect_white)
-            condition_white = center_white.y >= minimum_deepness and (ratio_white.x >= minimum_ratio_white or ratio_white.y >= minimum_ratio_white)
-
-            if condition_white:
-                # Dibujo de rectangulos en la imagen
-                box_white = np.int0(cv2.boxPoints(rect_white))
-                frame = cv2.drawContours(frame, [box_white], 0, white_figure_color, white_figure_thickness)
-
-                # Extraccion de datos blancos
-                data['white'] += 1
-                data['white_data'].append(rect_white)
-'''
 
 #como en det_pato
 if __name__ == '__main__':
@@ -313,7 +229,7 @@ if __name__ == '__main__':
          
             
         #Ventana con imagen normal del duckiebot           
-        cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
+        #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
         cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 

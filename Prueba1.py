@@ -47,7 +47,7 @@ white_figure_color = (255, 0, 255)
 white_figure_thickness = 2
 
 # Dibujo centros de blobs detectados
-show_centers_yellow = False
+show_centers_yellow = True
 show_centers_white = False
 yellow_centers_color = (0, 0, 255)
 white_centers_color = (0, 0, 255)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='loop_obstacles')
+    parser.add_argument('--map-name', default='loop_empty')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     # Se reinicia el environment
     env.reset()
-
+    obs, reward, done, info = env.step(np.array([0.0, 0.0]))
     while True:
 
         # Captura la tecla que está siendo apretada y almacena su valor en key
@@ -123,10 +123,10 @@ if __name__ == '__main__':
         if key == 27:
             break
 
-        action = mov_duckiebot(key)
+        #action = mov_duckiebot(key)
         # Se ejecuta la acción definida anteriormente y se retorna la observación (obs),
         # la evaluación (reward), etc
-        obs, reward, done, info = env.step(action)
+        #obs, reward, done, info = env.step(action)
         # obs consiste en un imagen RGB de 640 x 480 x 3
 
         # done significa que el Duckiebot chocó con un objeto o se salió del camino
@@ -183,7 +183,8 @@ if __name__ == '__main__':
                 # Encontrar rectangulos rotados y sus puntos centro
                 rect_yellow = cv2.minAreaRect(cnt_yellow)   
                 center_yellow = center(rect_yellow)
-
+                #print(center_yellow)
+                
                 # Dibujar puntos centro
                 if show_centers_yellow:
                     center_yellow_coordinates = (int(center_yellow['coordx']), int(center_yellow['coordy']))
@@ -200,8 +201,7 @@ if __name__ == '__main__':
 
                     # Extraccion de datos amarillos
                     data['yellow'] += 1
-                    data['yellow_data'].append(rect_yellow)
-
+                    data['yellow_data'].append(center_yellow_coordinates)
         # Manejo de datos blancos
         for cnt_white in contours_white:
 
@@ -227,12 +227,22 @@ if __name__ == '__main__':
                     data['white'] += 1
                     data['white_data'].append(rect_white)
          
-            
+        print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
         cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
-
+        #Seguidor de líneas 
+        center_yellow = np.array(data['yellow_data'])
+        if len(center_yellow) == 0:
+            action = np.array([-0.44, 0.0])
+        else:
+            prom = np.mean(center_yellow,axis=0)
+            promx=prom[0]
+            error=320-promx
+            action = np.array([0.44, error/160])        
+        # En ese caso se reinicia el simulador
+        obs, reward, done, info = env.step(action)
 # Se cierra el environment y termina el programa
 env.close() 

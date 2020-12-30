@@ -6,9 +6,9 @@ from gym_duckietown.envs import DuckietownEnv
 import numpy as np
 import cv2
 
-
 #nuevos import
 import math
+import time
 #from cv_bridge import CvBridge, CvBridgeError
 
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='loop_pedestrians')
+    parser.add_argument('--map-name', default='4way')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -251,7 +251,7 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['white'] += 1
-                    data['white_data'].append(rect_white)
+                    data['white_data'].append(center_white_coordinates)
         
         # Manejo de datos rojos
         for cnt_red in contours_red:
@@ -276,7 +276,7 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['red'] += 1
-                    data['red_data'].append(rect_red)
+                    data['red_data'].append(center_red_coordinates)
                     
          # Manejo de datos verdes
         for cnt_green in contours_green:
@@ -301,11 +301,11 @@ if __name__ == '__main__':
                     
                     # Extraccion de datos blancos
                     #data['green'] += 1             #genera errores xD
-                    #data['green_data'].append(rect_green)
+                    #data['green_data'].append(center_green_coordinates)
         
                     
         
-        print (np.array(data['yellow_data']))
+        #print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
@@ -313,17 +313,20 @@ if __name__ == '__main__':
 
         #Seguidor de líneas 
         center_yellow = np.array(data['yellow_data'])
+        center_red=np.array(data['red_data'])
         if len(center_yellow) == 0:
-            
             action = np.array([-0.8, 0.8])
         
-        #elif len(center_red) != 0:
-         #   action = np.array([0, 0.8])
-        
+        elif len(center_red) != 0:
+            prom_red = np.mean(center_red,axis=0)
+            promy = prom_red[1]
+            if promy < 100:
+                time.sleep(20)
+                action = np.array([0.0, 0.8])
         
         else:
-            prom = np.mean(center_yellow,axis=0)
-            promx=prom[0]
+            promy = np.mean(center_yellow,axis=0)
+            promx=promy[0]
             error=320-160-promx
             action = np.array([0.44, error/140])    #160    
         # En ese caso se reinicia el simulador

@@ -34,12 +34,10 @@ lower_white = np.array([0, 0, 155])
 upper_white = np.array([255, 55, 255])
 lower_yellow = np.array([20, 80, 150])
 upper_yellow = np.array([45, 255, 255])
-lower_red = np.array([0, 80, 170])   #para los "pares"
-upper_red = np.array([10, 255, 255])
-
-
-
-
+lower_red = np.array([170, 80, 150])   #para los "pares"
+upper_red = np.array([180, 255, 255])
+lower_green = np.array([45, 80, 150])
+upper_green = np.array([70, 255, 255])
 
 
 # Morfologias
@@ -54,15 +52,19 @@ white_figure_color = (255, 0, 255)
 white_figure_thickness = 2
 red_figure_color = (255, 0, 255)
 red_figure_thickness = 2
-
+green_figure_color = (255, 0, 255)
+green_figure_thickness = 2
 
 # Dibujo centros de blobs detectados
 show_centers_yellow = True
 show_centers_white = True 
 show_centers_red = True #nuevo
+show_centers_green = True #nuevo
 yellow_centers_color = (0, 0, 255)
 white_centers_color = (0, 0, 255)
 red_centers_color = (0, 0, 255)  #nuevo
+green_centers_color = (0, 0, 255)  #nuevo
+
 centers_radius = 5
 centers_thickness = 5
 
@@ -70,7 +72,8 @@ centers_thickness = 5
 minimum_deepness = 125
 minimum_ratio_yellow = 1.5
 minimum_ratio_white = 3.0    # 1.71
-minimum_ratio_red = 3.0
+minimum_ratio_red = 1.5
+minimum_ratio_green = 1.5
 
 def morfologies(mask):
     kernel = np.ones((kernel_dimensions, kernel_dimensions), np.uint8)
@@ -101,7 +104,7 @@ if __name__ == '__main__':
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='4way')
+    parser.add_argument('--map-name', default='loop_pedestrians')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -159,27 +162,32 @@ if __name__ == '__main__':
         mask_yellow = cv2.inRange(frame_hsv, lower_yellow, upper_yellow)
         mask_white = cv2.inRange(frame_hsv, lower_white, upper_white)
         mask_red = cv2.inRange(frame_hsv, lower_red, upper_red) #rojo
-
+        mask_green = cv2.inRange(frame_hsv, lower_green, upper_green)
     
         # Realizamos las operaciones morfologicas para borrar manchas pequenas
         mask_yellow = morfologies(mask_yellow) 
         mask_white = morfologies(mask_white)
         mask_red = morfologies(mask_red)
+        mask_green = morfologies(mask_green)
     
         # Filtramos la imagen con esos colores
         frame_yellow = cv2.bitwise_and(frame, frame, mask=mask_yellow)
         frame_white = cv2.bitwise_and(frame, frame, mask=mask_white)
         frame_red = cv2.bitwise_and(frame, frame, mask=mask_red)
+        frame_green = cv2.bitwise_and(frame, frame, mask=mask_green)
+
 
         #parte nuevaaaaaa, para cambiar de RGB  a  BGR
         frame_yellow = cv2.cvtColor(frame_yellow, cv2.COLOR_RGB2BGR)
         frame_white = cv2.cvtColor(frame_white, cv2.COLOR_RGB2BGR)
         frame_red = cv2.cvtColor(frame_red, cv2.COLOR_RGB2BGR)
+        frame_green = cv2.cvtColor(frame_green, cv2.COLOR_RGB2BGR)
 
         # Cambio a espacio de color en blanco y negro
         frame_yellow = cv2.cvtColor(frame_yellow, gray_space)
         frame_white = cv2.cvtColor(frame_white, gray_space)
         frame_red = cv2.cvtColor(frame_red, gray_space)
+        frame_green = cv2.cvtColor(frame_green, gray_space)
 
         # Deteccion de contornos
         #image__yellow, sacamos esto pq genera problemas
@@ -188,7 +196,8 @@ if __name__ == '__main__':
         contours_white, hierarchy_white = cv2.findContours(frame_white, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
         contours_red, hierarchy_red = cv2.findContours(frame_red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) #rojo
-
+        contours_green, hierarchy_green = cv2.findContours(frame_green, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
         # Creamos el diccionario con los datos
         data = {'yellow': 0, 'white': 0, 'red': 0, 'yellow_data': [], 'white_data': [], 'red_data':[]}
     
@@ -267,10 +276,34 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['red'] += 1
-                    data['red_data'].append(rect_white)
+                    data['red_data'].append(rect_red)
+                    
+         # Manejo de datos verdes
+        for cnt_green in contours_green:
+
+                # Encontrar rectangulos rotados y sus puntos centro
+                rect_green = cv2.minAreaRect(cnt_green)
+                center_green = center(rect_green)
+
+                # Dibujar puntos centro
+                if show_centers_green:
+                    center_green_coordinates = (int(center_green['coordx']), int(center_green['coordy']))
+                    frame = cv2.circle(frame, center_green_coordinates, centers_radius, green_centers_color, centers_thickness)
+
+                # Condiciones para ser calzada blanca
+                ratio_green = ratio(rect_white)
+                condition_green = center_green['coordy'] >= minimum_deepness and (ratio_green['coordx'] >= minimum_ratio_green or ratio_green['coordy'] >= minimum_ratio_green)
+
+                if condition_green:
+                    # Dibujo de rectangulos en la imagen
+                    box_green = np.int0(cv2.boxPoints(rect_green))
+                    frame = cv2.drawContours(frame, [box_green], 0, green_figure_color, green_figure_thickness)
+                    
+                    # Extraccion de datos blancos
+                    #data['green'] += 1             #genera errores xD
+                    #data['green_data'].append(rect_green)
         
-        
-        
+                    
         
         print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
@@ -282,8 +315,12 @@ if __name__ == '__main__':
         center_yellow = np.array(data['yellow_data'])
         if len(center_yellow) == 0:
             
-            action = np.array([-0.5, 0.5])
-            
+            action = np.array([-0.8, 0.8])
+        
+        #elif len(center_red) != 0:
+         #   action = np.array([0, 0.8])
+        
+        
         else:
             prom = np.mean(center_yellow,axis=0)
             promx=prom[0]

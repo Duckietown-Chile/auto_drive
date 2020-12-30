@@ -230,7 +230,6 @@ if __name__ == '__main__':
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
         cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
-
         #Seguidor de líneas 
         center_yellow = np.array(data['yellow_data'])
         center_white = np.array(data['white_data']) 

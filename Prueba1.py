@@ -6,7 +6,6 @@ from gym_duckietown.envs import DuckietownEnv
 import numpy as np
 import cv2
 
-
 #nuevos import
 import math
 #from cv_bridge import CvBridge, CvBridgeError
@@ -48,7 +47,7 @@ white_figure_thickness = 2
 
 # Dibujo centros de blobs detectados
 show_centers_yellow = True
-show_centers_white = False
+show_centers_white = True
 yellow_centers_color = (0, 0, 255)
 white_centers_color = (0, 0, 255)
 centers_radius = 5
@@ -225,9 +224,8 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['white'] += 1
-                    data['white_data'].append(rect_white)
+                    data['white_data'].append(center_white_coordinates)
          
-        print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
@@ -235,13 +233,17 @@ if __name__ == '__main__':
 
         #Seguidor de líneas 
         center_yellow = np.array(data['yellow_data'])
-        if len(center_yellow) == 0:
+        center_white = np.array(data['white_data']) 
+        #print(center_white)
+        if len(center_yellow) == 0 and len(center_white) == 0:
             action = np.array([-0.44, 0.0])
+        elif len(center_yellow) == 0:
+            action = np.array([0, 1])
         else:
-            prom = np.mean(center_yellow,axis=0)
-            promx=prom[0]
-            error=320-promx
-            action = np.array([0.44, error/160])        
+            prom_y = np.mean(center_yellow,axis=0)  
+            promx= prom_y[0]
+            error=100-promx
+            action = np.array([0.44 - abs(error/500), error/160])        
         # En ese caso se reinicia el simulador
         obs, reward, done, info = env.step(action)
 # Se cierra el environment y termina el programa

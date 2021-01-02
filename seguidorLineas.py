@@ -5,28 +5,11 @@ import gym_duckietown
 from gym_duckietown.envs import DuckietownEnv
 import numpy as np
 import cv2
+import time
 
 #nuevos import
 import math
-import time
 #from cv_bridge import CvBridge, CvBridgeError
-
-
-
-    
-def mov_duckiebot(key):
-    # La acción de Duckiebot consiste en dos valores:
-    # velocidad lineal y velocidad de giro
-    actions = {ord('w'): np.array([1.0, 0.0]),
-               ord('s'): np.array([-1.0, 0.0]),
-               ord('a'): np.array([0.0, 1.0]),
-               ord('d'): np.array([0.0, -1.0]),
-               ord('q'): np.array([0.3, 1.0]),
-               ord('e'): np.array([0.3, -1.0])
-               }
-#aca supongo que hay que implementar los campos potenciales.
-    return actions.get(key, np.array([0.0, 0.0]))
-
 
 
 # Define range of color in HSV
@@ -104,7 +87,7 @@ if __name__ == '__main__':
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='4way')
+    parser.add_argument('--map-name', default='loop_pedestrians')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -199,7 +182,7 @@ if __name__ == '__main__':
         contours_green, hierarchy_green = cv2.findContours(frame_green, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
         # Creamos el diccionario con los datos
-        data = {'yellow': 0, 'white': 0, 'red': 0, 'yellow_data': [], 'white_data': [], 'red_data':[]}
+        data = {'yellow': 0, 'white': 0, 'red': 0, 'green':0, 'yellow_data': [], 'white_data': [], 'red_data':[], 'green_data':[]}
     
     
         # Manejo de datos amarillos
@@ -208,7 +191,6 @@ if __name__ == '__main__':
                 # Encontrar rectangulos rotados y sus puntos centro
                 rect_yellow = cv2.minAreaRect(cnt_yellow)   
                 center_yellow = center(rect_yellow)
-                #print(center_yellow)
                 
                 # Dibujar puntos centro
                 if show_centers_yellow:
@@ -251,7 +233,7 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['white'] += 1
-                    data['white_data'].append(center_white_coordinates)
+                    data['white_data'].append(rect_white)
         
         # Manejo de datos rojos
         for cnt_red in contours_red:
@@ -276,7 +258,7 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['red'] += 1
-                    data['red_data'].append(center_red_coordinates)
+                    data['red_data'].append(rect_red)
                     
          # Manejo de datos verdes
         for cnt_green in contours_green:
@@ -300,36 +282,54 @@ if __name__ == '__main__':
                     frame = cv2.drawContours(frame, [box_green], 0, green_figure_color, green_figure_thickness)
                     
                     # Extraccion de datos blancos
-                    #data['green'] += 1             #genera errores xD
-                    #data['green_data'].append(center_green_coordinates)
+                    data['green'] += 1             #genera errores xD
+                    data['green_data'].append(rect_green)
         
                     
         
-        #print (np.array(data['yellow_data']))
+        print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
         cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
-        #Seguidor de líneas 
+
+        #parametro para el seguidor de lineas
         center_yellow = np.array(data['yellow_data'])
-        center_red=np.array(data['red_data'])
-        if len(center_yellow) == 0:
+        center_red = np.array(data['red_data'])
+        center_white = np.array(data['white_data'])
+        center_green = np.array(data['green_data'])
+
+        #Seguidor de líneas 
+        
+        if len(center_yellow) == 0: #para que retrocede si no encuentra detecciones amarillas
+            
             action = np.array([-0.8, 0.8])
         
-        elif len(center_red) != 0:
-            prom_red = np.mean(center_red,axis=0)
-            promy = prom_red[1]
-            if promy < 100:
-                time.sleep(20)
-                action = np.array([0.0, 0.8])
-        
-        else:
-            promy = np.mean(center_yellow,axis=0)
-            promx=promy[0]
+        # elif len(center_red) != 0: #para que se detenga y luego doble al encontrar una deteccion roja            
+        #     prom1 = np.mean(center_red,axis=0)
+        #     promy = prom1[1]
+        #     dist = 240-promy
+        #     if dist<0:
+        #         tiempo = time.time()
+        #         time.sleep(5)
+        #         if tiempo>5 and tiempo<8:
+        #             action = np.array([0.8, -0.4])
+                    
+        elif len(center_green) !=0:
+            prom2 = np.mean(center_green,axis=0)
+            promx = prom2[0]
+            promy = prom2[1]
+            errorx = 320-promx
+            errory = 240-promy
+            
+        elif len(center_yellow) !=0:
+            prom = np.mean(center_yellow,axis=0)
+            promx=prom[0]
             error=320-160-promx
             action = np.array([0.44, error/140])    #160    
         # En ese caso se reinicia el simulador
         obs, reward, done, info = env.step(action)
+    
 # Se cierra el environment y termina el programa
 env.close() 

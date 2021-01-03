@@ -24,8 +24,8 @@ upper_green = np.array([70, 255, 255])
 
 
 # Morfologias
-kernel_dimensions = 4    # 5
-erode_iterations = 3    # 1
+kernel_dimensions = 4    # 4
+erode_iterations = 3    # 3
 dilate_iterations = 1    # 1
 
 # Dibujo
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='loop_pedestrians')
+    parser.add_argument('--map-name', default='udem1')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -114,6 +114,7 @@ if __name__ == '__main__':
     # Se reinicia el environment
     env.reset()
     obs, reward, done, info = env.step(np.array([0.0, 0.0]))
+    tiempo = None
     while True:
 
         # Captura la tecla que está siendo apretada y almacena su valor en key
@@ -200,7 +201,7 @@ if __name__ == '__main__':
                 # Condiciones para ser calzada amarilla
                 ratio_yellow = ratio(rect_yellow)
                 condition_yellow = center_yellow['coordy'] >= minimum_deepness and (ratio_yellow['coordx'] >= minimum_ratio_yellow or ratio_yellow['coordy'] >= minimum_ratio_yellow)
-#todos los .x tienen que ser ['coordy']
+
                 if condition_yellow:
                     # Dibujo de rectangulos en la imagen
                     box__yellow = np.int0(cv2.boxPoints(rect_yellow))
@@ -233,7 +234,7 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['white'] += 1
-                    data['white_data'].append(rect_white)
+                    data['white_data'].append(center_white_coordinates)
         
         # Manejo de datos rojos
         for cnt_red in contours_red:
@@ -258,7 +259,7 @@ if __name__ == '__main__':
                 
                     # Extraccion de datos blancos
                     data['red'] += 1
-                    data['red_data'].append(rect_red)
+                    data['red_data'].append(center_red_coordinates)
                     
          # Manejo de datos verdes
         for cnt_green in contours_green:
@@ -282,8 +283,8 @@ if __name__ == '__main__':
                     frame = cv2.drawContours(frame, [box_green], 0, green_figure_color, green_figure_thickness)
                     
                     # Extraccion de datos blancos
-                    data['green'] += 1             #genera errores xD
-                    data['green_data'].append(rect_green)
+                    data['green'] += 1             
+                    data['green_data'].append(center_green_coordinates)
         
                     
         
@@ -305,29 +306,46 @@ if __name__ == '__main__':
         if len(center_yellow) == 0: #para que retrocede si no encuentra detecciones amarillas
             
             action = np.array([-0.8, 0.8])
-        
-        # elif len(center_red) != 0: #para que se detenga y luego doble al encontrar una deteccion roja            
-        #     prom1 = np.mean(center_red,axis=0)
-        #     promy = prom1[1]
-        #     dist = 240-promy
-        #     if dist<0:
-        #         tiempo = time.time()
-        #         time.sleep(5)
-        #         if tiempo>5 and tiempo<8:
-        #             action = np.array([0.8, -0.4])
-                    
-        elif len(center_green) !=0:
-            prom2 = np.mean(center_green,axis=0)
-            promx = prom2[0]
-            promy = prom2[1]
-            errorx = 320-promx
-            errory = 240-promy
             
-        elif len(center_yellow) !=0:
+        else:
             prom = np.mean(center_yellow,axis=0)
             promx=prom[0]
             error=320-160-promx
-            action = np.array([0.44, error/140])    #160    
+            action = np.array([0.44, error/140])
+        
+        
+                
+            
+        # if len(center_red) != 0: #para que se detenga y luego doble al encontrar una deteccion roja            
+        #     print(center_red)
+        #     prom1 = np.mean(center_red,axis=0)
+        #     promy = prom1[1]
+        #     dist = 360-promy 
+        #     if dist<0 and tiempo is None:  #se pueden usar estados(condiciones globales), para que sea mas ordenado el comportamiento del robot
+        #         tiempo = time.time()        
+                
+        #         if tiempo <5:
+        #             action = np.array([0.0, 0.0])
+        #         if tiempo>5 and tiempo<8:
+        #             action = np.array([0.8, -0.4])
+                
+        # if not tiempo is None:
+        #     action = np.array([0.0, 0.0])
+        #     delta = time.time()-tiempo
+        #     if delta>3:
+        #         action = np.array([0.44, 0.0])
+        #     if delta>3.5:
+        #         tiempo = None
+                
+                
+        # if len(center_green) !=0: #se cruza un pato radioctivo
+        #     prom2 = np.mean(center_green,axis=0)
+        #     promx = prom2[0]
+        #     promy = prom2[1]
+        #     errorx = 320-promx
+        #     errory = 240-promy
+            
+             
         # En ese caso se reinicia el simulador
         obs, reward, done, info = env.step(action)
     

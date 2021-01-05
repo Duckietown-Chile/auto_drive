@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='udem1')
+    parser.add_argument('--map-name', default='mapa')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -288,20 +288,37 @@ if __name__ == '__main__':
         
                     
         
-        print (np.array(data['yellow_data']))
+        #print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
         cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
-
-        #parametro para el seguidor de lineas
+        #CONDUCCIÓN AUTOMÁTICA
+        
+        #Parámetros para la conducción automática
         center_yellow = np.array(data['yellow_data'])
         center_red = np.array(data['red_data'])
         center_white = np.array(data['white_data'])
         center_green = np.array(data['green_data'])
 
-        #Seguidor de líneas 
+        #Funciones para filtrar puntos de una lista
+        #indice debe ser 0 o 1, dependiendo si se filtran los x o y de las tuplas.
+        def menores(indice,n,lista):
+            empty=[]
+            for i in lista:
+                if i[indice]<n:
+                    empty.append(i)
+            menores_filtrados=empty
+            return menores_filtrados
+                
+        def mayores(indice,n,lista):
+            empty=[]
+            for i in lista:
+                if i[indice]>n:
+                    empty.append(i)
+            mayores_filtrados=empty
+            return mayores_filtrados
         
         if len(center_yellow) == 0: #para que retrocede si no encuentra detecciones amarillas
             
@@ -344,7 +361,6 @@ if __name__ == '__main__':
         #     promy = prom2[1]
         #     errorx = 320-promx
         #     errory = 240-promy
-            
              
         # En ese caso se reinicia el simulador
         obs, reward, done, info = env.step(action)

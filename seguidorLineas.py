@@ -31,11 +31,11 @@ dilate_iterations = 1    # 1
 # Dibujo
 yellow_figure_color = (255, 0, 255)
 yellow_figure_thickness = 2
-white_figure_color = (255, 0, 255)
+white_figure_color = (120, 120, 120)
 white_figure_thickness = 2
-red_figure_color = (255, 0, 255)
+red_figure_color = (200, 200, 0)
 red_figure_thickness = 2
-green_figure_color = (255, 0, 255)
+green_figure_color = (255, 0, 0)
 green_figure_thickness = 2
 
 # Dibujo centros de blobs detectados
@@ -43,10 +43,10 @@ show_centers_yellow = True
 show_centers_white = True 
 show_centers_red = True #nuevo
 show_centers_green = True #nuevo
-yellow_centers_color = (0, 0, 255)
-white_centers_color = (0, 0, 255)
-red_centers_color = (0, 0, 255)  #nuevo
-green_centers_color = (0, 0, 255)  #nuevo
+yellow_centers_color = (255, 0, 255)
+white_centers_color = (120, 120, 120)
+red_centers_color = (255, 255, 0)  #nuevo
+green_centers_color = (255, 150, 0)  #nuevo
 
 centers_radius = 5
 centers_thickness = 5
@@ -288,71 +288,51 @@ if __name__ == '__main__':
         
                     
         
-        #print (np.array(data['yellow_data']))
+        print (np.array(data['yellow_data']))
         #Ventana con imagen normal del duckiebot           
         #cv2.imshow('Vista Normal', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         #Ventana con la deteccion
         cv2.imshow('Filtrado', cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
-        #CONDUCCIÓN AUTOMÁTICA
-        
-        #Parámetros para la conducción automática
+
+        #parametro para el seguidor de lineas
         center_yellow = np.array(data['yellow_data'])
         center_red = np.array(data['red_data'])
         center_white = np.array(data['white_data'])
         center_green = np.array(data['green_data'])
 
-        #Funciones para filtrar puntos de una lista
-        #indice debe ser 0 o 1, dependiendo si se filtran los x o y de las tuplas.
-        def menores(indice,n,lista):
-            empty=[]
-            for i in lista:
-                if i[indice]<n:
-                    empty.append(i)
-            menores_filtrados=empty
-            return menores_filtrados
-                
-        def mayores(indice,n,lista):
-            empty=[]
-            for i in lista:
-                if i[indice]>n:
-                    empty.append(i)
-            mayores_filtrados=empty
-            return mayores_filtrados
+        #Seguidor de líneas 
         
         if len(center_yellow) == 0: #para que retrocede si no encuentra detecciones amarillas
             
             action = np.array([-0.8, 0.8])
             
-        else:
+        else: #para que se mantenga a la derecha de los datos amarillos
             prom = np.mean(center_yellow,axis=0)
             promx=prom[0]
             error=320-160-promx
-            action = np.array([0.44, error/140])
+            action = np.array([0.44, error/140])    
         
-        
+        if len(center_red) != 0: #para que se detenga y luego doble al encontrar una deteccion roja            
+            print(center_red)
+            prom1 = np.mean(center_red,axis=0)
+            promy = prom1[1]
+            dist = 360-promy 
+            if dist<0 and tiempo is None: 
+                tiempo = time.time()        
                 
-            
-        # if len(center_red) != 0: #para que se detenga y luego doble al encontrar una deteccion roja            
-        #     print(center_red)
-        #     prom1 = np.mean(center_red,axis=0)
-        #     promy = prom1[1]
-        #     dist = 360-promy 
-        #     if dist<0 and tiempo is None:  #se pueden usar estados(condiciones globales), para que sea mas ordenado el comportamiento del robot
-        #         tiempo = time.time()        
+                if tiempo <5:
+                    action = np.array([0.0, 0.0])
+                if tiempo>5 and tiempo<8:
+                    action = np.array([0.8, -0.4])
                 
-        #         if tiempo <5:
-        #             action = np.array([0.0, 0.0])
-        #         if tiempo>5 and tiempo<8:
-        #             action = np.array([0.8, -0.4])
-                
-        # if not tiempo is None:
-        #     action = np.array([0.0, 0.0])
-        #     delta = time.time()-tiempo
-        #     if delta>3:
-        #         action = np.array([0.44, 0.0])
-        #     if delta>3.5:
-        #         tiempo = None
+        if not tiempo is None:
+            action = np.array([0.0, 0.0])
+            delta = time.time()-tiempo
+            if delta>3:
+                action = np.array([0.44, 0.0])
+            if delta>5:
+                tiempo = None
                 
                 
         # if len(center_green) !=0: #se cruza un pato radioctivo
@@ -361,6 +341,7 @@ if __name__ == '__main__':
         #     promy = prom2[1]
         #     errorx = 320-promx
         #     errory = 240-promy
+            
              
         # En ese caso se reinicia el simulador
         obs, reward, done, info = env.step(action)
